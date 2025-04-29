@@ -1,0 +1,60 @@
+M = 1e7;
+
+A = [1 -1 -1  0  1  0;
+     2 -1  0 -1  0  1
+     ];
+b = [0;2];
+C = [-3 4 0 0 -M -M];
+
+m = size(A,1);
+n = size(A,2);
+
+B = [1 0 0 ; 0 1 0 ; 0 0 1];
+bv_ind = [5 6];
+Table = [];
+Y = [A b];
+empty = NaN(1,size(Y,2));
+
+for s = 1 : 50
+    Xb = Y(:,end);
+    Cb = C(bv_ind);
+    ZjCj = Cb * Y(:,1:n) - C;
+    Z = Cb * Xb;
+
+    Table = [Table; empty ; ZjCj Z; Y];
+
+    if(all(ZjCj >= 0) && all(C(bv_ind) ~= -M))
+        disp("OPTIMAL SOLUTION FOUND");
+        disp(Xb);
+        basic_var = bv_ind;
+        disp("OPTIMAL OBJECTIVE FUNCTION VALUE")
+        disp(Z);
+        break;
+    else
+        [a,Ev] = min(ZjCj);
+        if(Y(:,Ev) < 0)
+            disp("Unbounded Solution");
+            break;
+        else
+            ratio = [];
+            for j = 1:m
+                if(Y(j,Ev) > 0)
+                    ratio(j) = Xb(j) / (Y(j,Ev));
+                else
+                    ratio(j) = Inf;
+                end
+            end
+        end
+        [k,Lv] = min(ratio);
+        bv_ind(Lv) = Ev;
+    end
+
+    pivot = Y(Lv,Ev);
+    Y(Lv,:) = Y(Lv,:) / pivot;
+
+    for i = 1 : m
+        if(i ~= Lv)
+            Y(i,:) = Y(i,:) - Y(i,Ev) * Y(Lv,:);
+        end
+    end
+end
