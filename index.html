@@ -1,60 +1,56 @@
-M = 1e7;
+c1 = @(x1,x2) 6*x1 + 4*x2 - 24;
+c2 = @(x1,x2) 1*x2 + 2*x2 - 6;
+c3 = @(x1,x2) -x1 + x2 - 1;
+c4 = @(x1,x2) 0*x1 + x2 -6;
 
-A = [1 -1 -1  0  1  0;
-     2 -1  0 -1  0  1
-     ];
-b = [0;2];
-C = [-3 4 0 0 -M -M];
+C = [5 4 0 0 0 0];
+A = [6 4 1 0 0 0;1 2 0 1 0 0;-1 1 0 0 1 0; 0 1 0 0 0 1];
+B = [24;6;1;6];
 
 m = size(A,1);
 n = size(A,2);
+table = [];
 
-B = [1 0 0 ; 0 1 0 ; 0 0 1];
-bv_ind = [5 6];
-Table = [];
-Y = [A b];
-empty = NaN(1,size(Y,2));
-
-for s = 1 : 50
+bv_index = n-m+1 : n;
+Y = [A B];
+for s=1:50
     Xb = Y(:,end);
-    Cb = C(bv_ind);
-    ZjCj = Cb * Y(:,1:n) - C;
-    Z = Cb * Xb;
+    Cb = C(bv_index);
+    ZjCj = Cb*Y(:,1:n)-C;
+    Z = Cb*Xb;
+    table = [table ;ZjCj Z;Y]
 
-    Table = [Table; empty ; ZjCj Z; Y];
+    if(ZjCj >= 0)
+        disp("Optimal sol achieved")
+        Xb;
+        basic_var = bv_index;
+        disp("Optimal obj func value")
+        Z
+        break
 
-    if(all(ZjCj >= 0) && all(C(bv_ind) ~= -M))
-        disp("OPTIMAL SOLUTION FOUND");
-        disp(Xb);
-        basic_var = bv_ind;
-        disp("OPTIMAL OBJECTIVE FUNCTION VALUE")
-        disp(Z);
-        break;
     else
-        [a,Ev] = min(ZjCj);
-        if(Y(:,Ev) < 0)
-            disp("Unbounded Solution");
-            break;
+        [a,EV] = min(ZjCj);
+        if(Y(:,EV) < 0)
+            disp("Unbounded Solution")
+            break
         else
-            ratio = [];
             for j = 1:m
-                if(Y(j,Ev) > 0)
-                    ratio(j) = Xb(j) / (Y(j,Ev));
+                if(Y(j,EV) > 0)
+                    ratio(j) = Xb(j) / Y(j,EV);
                 else
                     ratio(j) = Inf;
                 end
             end
         end
-        [k,Lv] = min(ratio);
-        bv_ind(Lv) = Ev;
+        [k,LV] = min(ratio);
+        bv_index(LV) = EV;
     end
 
-    pivot = Y(Lv,Ev);
-    Y(Lv,:) = Y(Lv,:) / pivot;
-
-    for i = 1 : m
-        if(i ~= Lv)
-            Y(i,:) = Y(i,:) - Y(i,Ev) * Y(Lv,:);
+    pivot = Y(LV,EV);
+    Y(LV,:) = Y(LV,:) / pivot;
+    for i = 1:m
+        if(i ~= LV)
+            Y(i,:) = Y(i,:) - Y(i,EV)*Y(LV,:);
         end
     end
 end
